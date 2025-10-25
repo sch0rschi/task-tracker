@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-actix-web = "4"
 openapi_client = { path = "target/generated/openapi" }
+actix-web = "4"
 actix-files = "0.6"
+sea-orm = { version = "1", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
+anyhow = "1"

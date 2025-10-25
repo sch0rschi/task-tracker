@@ -2,7 +2,39 @@ openapi: 3.0.3
 info:
   title: Task Tracker API
   version: 0.1.0
+
 paths:
+  /tasks:
+    get:
+      summary: Get all tasks
+      operationId: listTasks
+      responses:
+        '200':
+          description: List of all tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
+    post:
+      summary: Create a new task
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTask'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
   /tasks/{id}:
     get:
       summary: Get a task by ID
@@ -22,6 +54,27 @@ paths:
                 $ref: '#/components/schemas/Task'
         '404':
           description: Task not found
+
+  /tasks/{id}/done:
+    put:
+      summary: Mark a task as done
+      operationId: markTaskDone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task marked as done
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+
 components:
   schemas:
     Task:
@@ -35,3 +88,10 @@ components:
         done:
           type: boolean
       required: [id, title, done]
+
+    NewTask:
+      type: object
+      properties:
+        title:
+          type: string
+      required: [title]

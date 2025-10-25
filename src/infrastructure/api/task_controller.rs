@@ -1,23 +1,92 @@
-use actix_web::{web, HttpResponse, Responder};
-use openapi_client::models::Task;
+use crate::application::task::task_service::TaskService;
+use actix_web::{HttpResponse, Responder, Scope, web};
+use openapi_client::models::{Task as ApiTask, NewTask};
 
-pub async fn get_task(path: web::Path<i64>) -> impl Responder {
-    let id = path.into_inner();
-
-    if id == 42 {
-        HttpResponse::Ok().json(Task {
-            id,
-            title: "Finish Rust project".to_string(),
-            done: false,
-        })
-    } else {
-        HttpResponse::NotFound().finish()
-    }
+#[derive(Clone)]
+pub struct TaskController {
+    service: TaskService,
 }
 
-pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::resource("/tasks/{id}")
-            .route(web::get().to(get_task))
-    );
+impl TaskController {
+    pub fn new(service: TaskService) -> Self {
+        Self { service }
+    }
+
+    pub fn scope(self) -> Scope {
+        web::scope("/tasks")
+            .app_data(web::Data::new(self.service))
+            .route("", web::get().to(Self::list_tasks))
+            .route("", web::post().to(Self::create_task))
+            .route("/{id}", web::get().to(Self::get_task))
+            .route("/{id}/done", web::put().to(Self::mark_done))
+    }
+
+    async fn list_tasks(service: web::Data<TaskService>) -> impl Responder {
+        match service.list_tasks().await {
+            Ok(tasks) => {
+                let api_tasks: Vec<ApiTask> = tasks
+                    .into_iter()
+                    .map(|t| ApiTask {
+                        id: t.id,
+                        title: t.title,
+                        done: t.done,
+                    })
+                    .collect();
+                HttpResponse::Ok().json(api_tasks)
+            }
+            Err(e) => {
+                eprintln!("Error listing tasks: {:?}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        }
+    }
+
+    async fn create_task(
+        service: web::Data<TaskService>,
+        payload: web::Json<NewTask>,
+    ) -> impl Responder {
+        match service.create_task(&payload.title).await {
+            Ok(task) => HttpResponse::Created().json(ApiTask {
+                id: task.id,
+                title: task.title,
+                done: task.done,
+            }),
+            Err(e) => {
+                eprintln!("Error creating task: {:?}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        }
+    }
+
+    async fn get_task(path: web::Path<i64>, service: web::Data<TaskService>) -> impl Responder {
+        let id = path.into_inner();
+        match service.get_task(id).await {
+            Ok(Some(task)) => HttpResponse::Ok().json(ApiTask {
+                id: task.id,
+                title: task.title,
+                done: task.done,
+            }),
+            Ok(None) => HttpResponse::NotFound().finish(),
+            Err(e) => {
+                eprintln!("Error fetching task: {:?}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        }
+    }
+
+    async fn mark_done(path: web::Path<i64>, service: web::Data<TaskService>) -> impl Responder {
+        let id = path.into_inner();
+        match service.mark_done(id).await {
+            Ok(Some(task)) => HttpResponse::Ok().json(ApiTask {
+                id: task.id,
+                title: task.title,
+                done: task.done,
+            }),
+            Ok(None) => HttpResponse::NotFound().finish(),
+            Err(e) => {
+                eprintln!("Error marking task as done: {:?}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        }
+    }
 }
