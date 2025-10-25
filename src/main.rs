@@ -1,7 +1,7 @@
 use actix_files::Files;
 use actix_web::{App, HttpServer};
 
-mod controller;
+mod infrastructure;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -10,7 +10,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            .configure(controller::config)
+            .configure(infrastructure::api::task_controller::config)
             .service(Files::new("/openapi", "./openapi").index_file("openapi.yaml"))
             .service(Files::new("/swagger-ui", "./target/static/swagger-ui").index_file("task-ui.html"))
     })
