@@ -1,5 +1,5 @@
 use actix_files::Files;
-use actix_web::{App, HttpServer, web};
+use actix_web::{App, HttpServer};
 
 mod controller;
 
@@ -10,7 +10,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            .route("/tasks/{id}", web::get().to(controller::get_task))
+            .configure(controller::config)
             .service(Files::new("/openapi", "./openapi").index_file("openapi.yaml"))
             .service(Files::new("/swagger-ui", "./target/static/swagger-ui").index_file("task-ui.html"))
     })

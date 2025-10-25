@@ -14,3 +14,10 @@ pub async fn get_task(path: web::Path<i64>) -> impl Responder {
         HttpResponse::NotFound().finish()
     }
 }
+
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::resource("/tasks/{id}")
+            .route(web::get().to(get_task))
+    );
+}
