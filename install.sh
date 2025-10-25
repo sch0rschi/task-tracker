@@ -4,7 +4,7 @@ set -euo pipefail
 # =========================
 # Versions & locations
 # =========================
-GENERATOR_VERSION="7.9.0"
+GENERATOR_VERSION="7.16.0"
 GENERATOR_URL="https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli"
 GENERATOR_JAR="build/openapi-generator-cli.jar"
 
