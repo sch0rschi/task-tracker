@@ -9,3 +9,4 @@ actix-web = "4"
 actix-files = "0.6"
 sea-orm = { version = "1", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
 anyhow = "1"
+o2o = "0.5.4"

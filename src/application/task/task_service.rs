@@ -1,41 +1,39 @@
-use sea_orm::{IntoActiveModel, Set};
-use crate::domain::task;
-use crate::infrastructure::persistence::task_repository;
+use crate::domain::task::Task;
+use crate::infrastructure::persistence::repository::task_repository::TaskRepository;
 
 #[derive(Clone)]
 pub struct TaskService {
-    repository: task_repository::TaskRepository,
+    task_repository: TaskRepository,
 }
 
 impl TaskService {
-    pub fn new(repository: task_repository::TaskRepository) -> Self {
-        Self { repository }
+    pub fn new(repository: TaskRepository) -> Self {
+        Self { task_repository: repository }
     }
 
-    pub async fn create_task(&self, title: &str) -> anyhow::Result<task::Model> {
-        let new_task = task::Model {
+    pub async fn create_task(&self, title: &str) -> anyhow::Result<Task> {
+        let new_task = Task {
             title: title.to_string(),
             ..Default::default()
         };
-        self.repository.save(&new_task.into_active_model()).await
+        self.task_repository.save(new_task).await
     }
 
-    pub async fn mark_done(&self, id: i64) -> anyhow::Result<Option<task::Model>> {
-        if let Some(task) = self.repository.find_by_id(id).await? {
-            let mut task = task.into_active_model();
-            task.done = Set(true);
-            let updated = self.repository.save(&task).await?;
+    pub async fn mark_done(&self, id: i64) -> anyhow::Result<Option<Task>> {
+        if let Some(mut task) = self.task_repository.find_by_id(id).await? {
+            task.done = true;
+            let updated = self.task_repository.save(task).await?;
             Ok(Some(updated))
         } else {
             Ok(None)
         }
     }
 
-    pub async fn get_task(&self, id: i64) -> anyhow::Result<Option<task::Model>> {
-        self.repository.find_by_id(id).await
+    pub async fn get_task(&self, id: i64) -> anyhow::Result<Option<Task>> {
+        self.task_repository.find_by_id(id).await
     }
 
-    pub async fn list_tasks(&self) -> anyhow::Result<Vec<task::Model>> {
-        self.repository.find_all().await
+    pub async fn list_tasks(&self) -> anyhow::Result<Vec<Task>> {
+        self.task_repository.find_all().await
     }
 }

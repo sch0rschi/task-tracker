@@ -1,14 +1,15 @@
 use actix_files::Files;
 use actix_web::{App, HttpServer};
-use sea_orm::{Database, Schema, ConnectionTrait};
+use sea_orm::{ConnectionTrait, Database, Schema};
 
 mod infrastructure;
 mod domain;
 mod application;
 
 use application::task::task_service::TaskService;
-use infrastructure::persistence::task_repository::TaskRepository;
+use infrastructure::persistence::repository::task_repository::TaskRepository;
 use infrastructure::api::task_controller::TaskController;
+use infrastructure::persistence;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -21,7 +22,7 @@ async fn main() -> std::io::Result<()> {
 
     let schema = Schema::new(sea_orm::DatabaseBackend::Sqlite);
 
-    let stmt = schema.create_table_from_entity(domain::task::Entity);
+    let stmt = schema.create_table_from_entity(persistence::entity::task::Entity);
     db.execute(db.get_database_backend().build(&stmt))
         .await
         .expect("Failed to create schema");

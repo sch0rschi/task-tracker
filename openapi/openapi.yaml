@@ -87,11 +87,11 @@ components:
           type: string
         done:
           type: boolean
-      required: [id, title, done]
+      required: [ id, title, done ]
 
     NewTask:
       type: object
       properties:
         title:
           type: string
-      required: [title]
+      required: [ title ]
