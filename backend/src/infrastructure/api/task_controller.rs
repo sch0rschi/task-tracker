@@ -26,7 +26,7 @@ impl TaskController {
             Ok(tasks) => {
                 let api_tasks: Vec<TaskApiModel> = tasks
                     .into_iter()
-                    .map(|task| Into::<TaskApiModel>::into(task))
+                    .map(Into::<TaskApiModel>::into)
                     .collect();
                 HttpResponse::Ok().json(api_tasks)
             }
