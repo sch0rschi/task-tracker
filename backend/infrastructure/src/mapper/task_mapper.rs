@@ -1,6 +1,6 @@
 use o2o::o2o;
-use crate::domain::task::Task;
-use crate::infrastructure::persistence::entity::task::Model as TaskPersistenceModel;
+use domain::task::Task;
+use crate::persistence::entity::task::Model as TaskPersistenceModel;
 use openapi_client::models::Task as TaskApiModel;
 
 #[derive(Debug, Clone, o2o)]
@@ -29,9 +29,13 @@ impl From<TaskPersistenceModel> for Task {
     }
 }
 
-impl From<Task> for TaskApiModel {
-    fn from(task: Task) -> Self {
-        let task_mapper: TaskMapper  = task.into();
+pub trait ToApiModel {
+    fn to_api_model(self) -> TaskApiModel;
+}
+
+impl ToApiModel for Task {
+    fn to_api_model(self) -> TaskApiModel {
+        let task_mapper: TaskMapper = self.into();
         task_mapper.into()
     }
 }

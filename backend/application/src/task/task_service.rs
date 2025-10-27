@@ -1,14 +1,17 @@
-use crate::domain::task::Task;
-use crate::infrastructure::persistence::repository::task_repository::TaskRepository;
+use crate::task::task_repository::TaskRepository;
+use domain::task::Task;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct TaskService {
-    task_repository: TaskRepository,
+    task_repository: Arc<dyn TaskRepository>,
 }
 
 impl TaskService {
-    pub fn new(repository: TaskRepository) -> Self {
-        Self { task_repository: repository }
+    pub fn new(repository: impl TaskRepository + 'static) -> Self {
+        Self {
+            task_repository: Arc::new(repository),
+        }
     }
 
     pub async fn create_task(&self, title: &str) -> anyhow::Result<Task> {

@@ -3,14 +3,13 @@ use actix_web::{App, HttpServer, middleware};
 use actix_cors::Cors;
 use sea_orm::{ConnectionTrait, Database, Schema};
 
-mod infrastructure;
-mod domain;
-mod application;
+pub mod api;
+pub mod mapper;
+pub mod persistence;
 
 use application::task::task_service::TaskService;
-use infrastructure::persistence::repository::task_repository::TaskRepository;
-use infrastructure::api::task_controller::TaskController;
-use infrastructure::persistence;
+use persistence::repository::task_repository_impl::TaskRepositoryImpl;
+use api::task_controller::TaskController;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -27,13 +26,13 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to create schema");
 
-    let repo = TaskRepository::new(db);
+    let repo = TaskRepositoryImpl::new(db);
     let service = TaskService::new(repo);
     let controller = TaskController::new(service);
 
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allow_any_origin() // 👈 for development only
+            .allow_any_origin()
             .allow_any_method()
             .allow_any_header();
 
@@ -41,7 +40,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(cors)
             .service(controller.clone().scope())
-            .service(Files::new("/openapi", "../openapi").index_file("openapi.yaml"))
+            .service(Files::new("/openapi", "../../openapi").index_file("openapi.yaml"))
             .service(Files::new("/swagger-ui", "./target/static/swagger-ui").index_file("task-ui.html"))
             .service(
                 Files::new("/", "./target/static/frontend")

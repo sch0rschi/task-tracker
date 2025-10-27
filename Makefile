@@ -11,18 +11,18 @@ GENERATOR_URL := https://repo1.maven.org/maven2/org/openapitools/openapi-generat
 GENERATOR_JAR := build/openapi-generator-cli-${GENERATOR_VERSION}.jar
 
 OPENAPI_SPEC := openapi/openapi.yaml
-OPENAPI_OUT_BACKEND := backend/target/generated/openapi
+OPENAPI_OUT_BACKEND := backend/infrastructure/target/generated/openapi
 OPENAPI_OUT_FRONTEND := frontend/target/generated/openapi
 
 SWAGGER_UI_VERSION := 5.17.14
 SWAGGER_UI_ZIP := build/swagger-ui-${SWAGGER_UI_VERSION}.zip
 SWAGGER_UI_URL := https://github.com/swagger-api/swagger-ui/archive/refs/tags/v${SWAGGER_UI_VERSION}.zip
-SWAGGER_UI_DEST := backend/target/static/swagger-ui
+SWAGGER_UI_DEST := backend/infrastructure/target/static/swagger-ui
 CUSTOM_HTML := swagger/index.html
 
 FRONTEND_DIR := frontend
 BACKEND_DIR := backend
-FRONTEND_DIST := $(BACKEND_DIR)/target/static/frontend
+FRONTEND_DIST := $(BACKEND_DIR)/infrastructure/target/static/frontend
 
 # --- Default target ---
 .DEFAULT_GOAL := build
@@ -94,11 +94,11 @@ swagger-ui: $(SWAGGER_UI_ZIP)
 FRONTEND_SRC := $(shell find $(FRONTEND_DIR)/src -type f)
 
 $(FRONTEND_DIST)/index.html: $(FRONTEND_SRC)
-	cd $(FRONTEND_DIR) && $(TRUNK) build --release --dist ../$(FRONTEND_DIST)
+	cd $(FRONTEND_DIR) && $(TRUNK) build --dist ../$(FRONTEND_DIST)
 
 frontend: $(FRONTEND_DIST)/index.html
 	@mkdir -p $(FRONTEND_DIST)
-	cd $(FRONTEND_DIR) && $(TRUNK) build --release --dist ../$(FRONTEND_DIST)
+	cd $(FRONTEND_DIR) && $(TRUNK) build --dist ../$(FRONTEND_DIST)
 	@if [ -f "$(FRONTEND_DIST)/index.html" ]; then \
 	    echo "Frontend built successfully at $(FRONTEND_DIST)"; \
 	else \
@@ -107,17 +107,17 @@ frontend: $(FRONTEND_DIST)/index.html
 	fi
 
 backend:
-	cd $(BACKEND_DIR) && $(CARGO) build --release
+	cd $(BACKEND_DIR) && $(CARGO) build
 
 #=======================
 # Combined Build Targets
 #=======================
 
 build: generate-openapi-backend generate-openapi-frontend swagger-ui frontend backend
-	cargo build --release
+	cargo build
 
 run:
-	cd $(BACKEND_DIR) && $(CARGO) run
+	cd $(BACKEND_DIR)/infrastructure && $(CARGO) run
 
 #==============
 # Clean Targets
@@ -126,6 +126,9 @@ run:
 clean:
 	rm -rf target
 	rm -rf backend/target
+	rm -rf backend/domain/target
+	rm -rf backend/application/target
+	rm -rf backend/infrastructure/target
 	rm -rf frontend/target
 
 #==============
