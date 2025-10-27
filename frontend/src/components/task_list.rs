@@ -3,13 +3,14 @@ use wasm_bindgen_futures::spawn_local;
 use api_client::apis::tasks_api;
 use api_client::models::{Task, NewTask};
 use crate::api_config::config;
+use crate::components::task_item::TaskItem;
 
 #[function_component(TaskList)]
 pub fn task_list() -> Html {
     let tasks = use_state(Vec::<Task>::new);
     let title = use_state(String::new);
 
-    // Fetch tasks on mount
+    // Fetch on mount
     {
         let tasks = tasks.clone();
         use_effect_with((), move |_| {
@@ -44,7 +45,7 @@ pub fn task_list() -> Html {
             spawn_local(async move {
                 if !title_val.is_empty() {
                     let config = config();
-                    let new_task_req = NewTask { title: title_val.clone() };
+                    let new_task_req = NewTask { title: title_val };
                     if let Ok(new_task) = tasks_api::create_task(&config, new_task_req).await {
                         let mut new_list = (*tasks).clone();
                         new_list.push(new_task);
@@ -55,21 +56,15 @@ pub fn task_list() -> Html {
         })
     };
 
-    // Mark task done
-    let on_mark_done = {
+    // When a task updates (e.g., marked done)
+    let on_task_update = {
         let tasks = tasks.clone();
-        Callback::from(move |id: i64| {
-            let tasks = tasks.clone();
-            spawn_local(async move {
-                let config = config();
-                if let Ok(updated_task) = tasks_api::mark_task_done(&config, id as i32).await {
-                    let new_tasks = (*tasks)
-                        .iter()
-                        .map(|t| if t.id == id { updated_task.clone() } else { t.clone() })
-                        .collect();
-                    tasks.set(new_tasks);
-                }
-            });
+        Callback::from(move |updated: Task| {
+            let new_tasks = (*tasks)
+                .iter()
+                .map(|t| if t.id == updated.id { updated.clone() } else { t.clone() })
+                .collect();
+            tasks.set(new_tasks);
         })
     };
 
@@ -93,46 +88,8 @@ pub fn task_list() -> Html {
             </div>
 
             <ul class="space-y-2">
-                { for (*tasks).iter().map(|task| {
-                    let done_style = if task.done {
-                        "line-through text-gray-500 transition-opacity duration-200 opacity-70"
-                    } else {
-                        "transition-opacity duration-200 opacity-100"
-                    };
-
-                    let id = task.id;
-                    let onclick = {
-                        let on_mark_done = on_mark_done.clone();
-                        Callback::from(move |_| on_mark_done.emit(id))
-                    };
-
-                    html! {
-                        <li class="flex justify-between items-center px-2 py-1 hover:bg-gray-50 rounded transition-colors">
-                            <span class={classes!(done_style, "truncate")}>{ &task.title }</span>
-                            {
-                                if !task.done {
-                                    html! {
-                                        <button
-                                            class="text-sm bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded transition-all duration-200"
-                                            {onclick}
-                                        >
-                                            { "Mark done" }
-                                        </button>
-                                    }
-                                } else {
-                                    html! {
-                                        // Invisible placeholder to preserve layout height
-                                        <button
-                                            class="text-sm px-2 py-1 rounded opacity-0 pointer-events-none"
-                                            disabled=true
-                                        >
-                                            { "Done" }
-                                        </button>
-                                    }
-                                }
-                            }
-                        </li>
-                    }
+                { for (*tasks).iter().map(|task| html! {
+                    <TaskItem task={task.clone()} on_update={on_task_update.clone()} />
                 })}
             </ul>
         </div>
