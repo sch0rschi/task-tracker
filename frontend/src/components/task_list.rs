@@ -1,5 +1,8 @@
 use yew::prelude::*;
-use crate::api::{Task, list_tasks, create_task, mark_task_done, NewTask};
+use wasm_bindgen_futures::spawn_local;
+use api_client::apis::tasks_api;
+use api_client::models::{Task, NewTask};
+use crate::api_config::config;
 
 #[function_component(TaskList)]
 pub fn task_list() -> Html {
@@ -10,8 +13,9 @@ pub fn task_list() -> Html {
         let tasks = tasks.clone();
         use_effect_with((), move |_| {
             let tasks = tasks.clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                if let Ok(fetched) = list_tasks().await {
+            spawn_local(async move {
+                let config = config();
+                if let Ok(fetched) = tasks_api::list_tasks(&config).await {
                     tasks.set(fetched);
                 }
             });
@@ -34,9 +38,11 @@ pub fn task_list() -> Html {
         Callback::from(move |_| {
             let title_val = (*title).clone();
             let tasks = tasks.clone();
-            wasm_bindgen_futures::spawn_local(async move {
+            spawn_local(async move {
                 if !title_val.is_empty() {
-                    if let Ok(new_task) = create_task(&NewTask { title: title_val }).await {
+                    let config = config();
+                    let new_task_req = NewTask { title: title_val };
+                    if let Ok(new_task) = tasks_api::create_task(&config, new_task_req).await {
                         let mut new_list = (*tasks).clone();
                         new_list.push(new_task);
                         tasks.set(new_list);
@@ -50,8 +56,9 @@ pub fn task_list() -> Html {
         let tasks = tasks.clone();
         Callback::from(move |id: i64| {
             let tasks = tasks.clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                if let Ok(updated_task) = mark_task_done(id).await {
+            spawn_local(async move {
+                let config = config();
+                if let Ok(updated_task) = tasks_api::mark_task_done(&config, id as i32).await {
                     let new_tasks = (*tasks)
                         .iter()
                         .map(|t| if t.id == id { updated_task.clone() } else { t.clone() })

@@ -8,6 +8,8 @@ paths:
     get:
       summary: Get all tasks
       operationId: listTasks
+      tags:
+        - tasks
       responses:
         '200':
           description: List of all tasks
@@ -21,6 +23,8 @@ paths:
     post:
       summary: Create a new task
       operationId: createTask
+      tags:
+        - tasks
       requestBody:
         required: true
         content:
@@ -39,6 +43,8 @@ paths:
     get:
       summary: Get a task by ID
       operationId: getTask
+      tags:
+        - tasks
       parameters:
         - name: id
           in: path
@@ -59,6 +65,8 @@ paths:
     put:
       summary: Mark a task as done
       operationId: markTaskDone
+      tags:
+        - tasks
       parameters:
         - name: id
           in: path
