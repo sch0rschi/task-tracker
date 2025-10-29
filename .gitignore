@@ -1,5 +1,5 @@
 /target
 /backend/target/
 /frontend/target/
+/frontend/dist/*
 /build
-/backend/infrastructure/target/

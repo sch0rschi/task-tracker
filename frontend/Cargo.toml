@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-api_client = { path = "target/generated/openapi" }
+api_client = { path = "../target/generated/frontend/openapi" }
 yew = { version = "0.21", features = ["csr"] }
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }

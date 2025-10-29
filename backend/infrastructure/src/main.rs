@@ -41,9 +41,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .service(controller.clone().scope())
             .service(Files::new("/openapi", "../../openapi").index_file("openapi.yaml"))
-            .service(Files::new("/swagger-ui", "./target/static/swagger-ui").index_file("task-ui.html"))
+            .service(Files::new("/swagger-ui", "../../target/static/swagger-ui").index_file("index.html"))
             .service(
-                Files::new("/", "./target/static/frontend")
+                Files::new("/", "../../target/static/frontend")
                     .index_file("index.html")
                     .prefer_utf8(true)
             )
