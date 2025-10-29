@@ -1,142 +1,158 @@
+# ===============================
+#  Project Build & Development
+# ===============================
+
 # --- Tools ---
-CURL := curl -sSL
-UNZIP := unzip -q -j
-JAVA := java -jar
-TRUNK := trunk
-CARGO := cargo
+CURL    := curl -sSL
+UNZIP   := unzip -q -j
+JAVA    := java -jar
+TRUNK   := trunk
+CARGO   := cargo
+RM      := rm -rf
+MKDIR   := mkdir -p
 
-# --- Versions & locations ---
-GENERATOR_VERSION := 7.16.0
-GENERATOR_URL := https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli
-GENERATOR_JAR := build/openapi-generator-cli-${GENERATOR_VERSION}.jar
+# --- Versions & Locations ---
+GENERATOR_VERSION     := 7.16.0
+GENERATOR_URL         := https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli
+GENERATOR_JAR         := build/openapi-generator-cli-$(GENERATOR_VERSION).jar
 
-OPENAPI_SPEC := openapi/openapi.yaml
-OPENAPI_OUT_BACKEND := backend/infrastructure/target/generated/openapi
-OPENAPI_OUT_FRONTEND := frontend/target/generated/openapi
+SWAGGER_UI_VERSION    := 5.17.14
+SWAGGER_UI_ZIP        := build/swagger-ui-$(SWAGGER_UI_VERSION).zip
+SWAGGER_UI_URL        := https://github.com/swagger-api/swagger-ui/archive/refs/tags/v$(SWAGGER_UI_VERSION).zip
+SWAGGER_UI_DEST       := target/static/swagger-ui
+CUSTOM_HTML           := swagger/index.html
 
-SWAGGER_UI_VERSION := 5.17.14
-SWAGGER_UI_ZIP := build/swagger-ui-${SWAGGER_UI_VERSION}.zip
-SWAGGER_UI_URL := https://github.com/swagger-api/swagger-ui/archive/refs/tags/v${SWAGGER_UI_VERSION}.zip
-SWAGGER_UI_DEST := backend/infrastructure/target/static/swagger-ui
-CUSTOM_HTML := swagger/index.html
+OPENAPI_SPEC          := openapi/openapi.yaml
+OPENAPI_BACKEND_OUT   := target/generated/backend/openapi
+OPENAPI_BACKEND_STAMP := $(OPENAPI_BACKEND_OUT)/.stamp
+OPENAPI_FRONTEND_OUT  := target/generated/frontend/openapi
+OPENAPI_FRONTEND_STAMP:= $(OPENAPI_FRONTEND_OUT)/.stamp
 
-FRONTEND_DIR := frontend
-BACKEND_DIR := backend
-FRONTEND_DIST := $(BACKEND_DIR)/infrastructure/target/static/frontend
+SWAGGER_STAMP         := $(SWAGGER_UI_DEST)/.stamp
+
+BACKEND_DIR           := backend
+FRONTEND_DIR          := frontend
+FRONTEND_DIST         := target/static/frontend
+FRONTEND_STAMP        := $(FRONTEND_DIST)/.stamp
 
 # --- Default target ---
 .DEFAULT_GOAL := build
 
-#====================
-# Setup and Downloads
-#====================
+# =====================
+# Setup & Downloads
+# =====================
 
 $(GENERATOR_JAR):
-	@mkdir -p $(dir $(GENERATOR_JAR))
-	@$(CURL) -o $(GENERATOR_JAR) \
-		"$(GENERATOR_URL)/$(GENERATOR_VERSION)/openapi-generator-cli-$(GENERATOR_VERSION).jar"
+	@$(MKDIR) $(dir $@)
+	@echo "📦 Downloading OpenAPI Generator v$(GENERATOR_VERSION)..."
+	@$(CURL) -o $@ "$(GENERATOR_URL)/$(GENERATOR_VERSION)/openapi-generator-cli-$(GENERATOR_VERSION).jar"
 
 $(SWAGGER_UI_ZIP):
-	@mkdir -p $(dir $(SWAGGER_UI_ZIP))
-	@$(CURL) -o $(SWAGGER_UI_ZIP) "$(SWAGGER_UI_URL)"
+	@$(MKDIR) $(dir $@)
+	@echo "📦 Downloading Swagger UI v$(SWAGGER_UI_VERSION)..."
+	@$(CURL) -o $@ "$(SWAGGER_UI_URL)"
 
-#================
-# Code Generation
-#================
+# =====================
+# OpenAPI Code Generation
+# =====================
 
-generate-openapi-backend: $(GENERATOR_JAR)
-	@if [ ! -d "$(OPENAPI_OUT_BACKEND)/src" ] || \
-	    [ "$(OPENAPI_SPEC)" -nt "$(OPENAPI_OUT_BACKEND)" ] || \
-	    [ ! -f "$(OPENAPI_OUT_BACKEND)/.generator_version" ] || \
-	    [ "$$(cat $(OPENAPI_OUT_BACKEND)/.generator_version)" != "$(GENERATOR_VERSION)" ]; then \
-	    echo "Generating Rust server stubs from $(OPENAPI_SPEC)..."; \
-	    mkdir -p "$(OPENAPI_OUT_BACKEND)"; \
-	    $(JAVA) $(GENERATOR_JAR) generate \
-	        -i "$(OPENAPI_SPEC)" \
-	        -g rust-server \
-	        -o "$(OPENAPI_OUT_BACKEND)" \
-	        --skip-validate-spec \
-	        --additional-properties=useSwaggerUI=true >/dev/null; \
-	    echo "$(GENERATOR_VERSION)" > "$(OPENAPI_OUT_BACKEND)/.generator_version"; \
-	    echo "OpenAPI code regenerated (v$(GENERATOR_VERSION))"; \
-	else \
-	    echo "OpenAPI sources are up-to-date (no changes)."; \
-	fi
+.PHONY: openapi openapi-backend openapi-frontend
 
-generate-openapi-frontend:
-	$(JAVA) -jar $(GENERATOR_JAR) generate \
-	    -i $(OPENAPI_SPEC) \
-	    -g rust \
-	    -o "$(OPENAPI_OUT_FRONTEND)" \
+openapi: openapi-backend openapi-frontend
+
+openapi-backend: $(OPENAPI_BACKEND_STAMP)
+$(OPENAPI_BACKEND_STAMP): $(GENERATOR_JAR) $(OPENAPI_SPEC)
+	@$(MKDIR) $(dir $@)
+	@echo "🔧 Generating Rust backend server from $(OPENAPI_SPEC)..."
+	@$(RM) "$(OPENAPI_BACKEND_OUT)"
+	@$(JAVA) $(GENERATOR_JAR) generate \
+	    -i "$(OPENAPI_SPEC)" \
+	    -g rust-server \
+	    -o "$(OPENAPI_BACKEND_OUT)" \
 	    --skip-validate-spec \
-	    --additional-properties=packageName=api_client,library=reqwest
+	    --additional-properties=useSwaggerUI=true >/dev/null
+	@touch $@
+	@echo "✅ Backend OpenAPI stubs generated → $(OPENAPI_BACKEND_OUT)"
 
+openapi-frontend: $(OPENAPI_FRONTEND_STAMP)
+$(OPENAPI_FRONTEND_STAMP): $(GENERATOR_JAR) $(OPENAPI_SPEC)
+	@$(MKDIR) $(dir $@)
+	@echo "🔧 Generating Rust API client from $(OPENAPI_SPEC)..."
+	@$(RM) "$(OPENAPI_FRONTEND_OUT)"
+	@$(JAVA) $(GENERATOR_JAR) generate \
+	    -i "$(OPENAPI_SPEC)" \
+	    -g rust \
+	    -o "$(OPENAPI_FRONTEND_OUT)" \
+	    --skip-validate-spec \
+	    --additional-properties=packageName=api_client,library=reqwest >/dev/null
+	@touch $@
+	@echo "✅ Frontend OpenAPI client generated → $(OPENAPI_FRONTEND_OUT)"
 
-swagger-ui: $(SWAGGER_UI_ZIP)
-	@if [ -f "$(SWAGGER_UI_DEST)/.version" ] && \
-	    [ "$$(cat $(SWAGGER_UI_DEST)/.version)" = "$(SWAGGER_UI_VERSION)" ]; then \
-	    echo "Swagger UI v$(SWAGGER_UI_VERSION) already installed."; \
-	else \
-	    echo "Installing/Updating Swagger UI to v$(SWAGGER_UI_VERSION)..."; \
-	    rm -rf "$(SWAGGER_UI_DEST)"; \
-	    mkdir -p "$(SWAGGER_UI_DEST)"; \
-	    $(UNZIP) -o "$(SWAGGER_UI_ZIP)" "swagger-ui-$(SWAGGER_UI_VERSION)/dist/*" -d "$(SWAGGER_UI_DEST)" >/dev/null; \
-	    cp "$(CUSTOM_HTML)" "$(SWAGGER_UI_DEST)/index.html"; \
-	    echo "$(SWAGGER_UI_VERSION)" > "$(SWAGGER_UI_DEST)/.version"; \
-	    echo "Swagger UI v$(SWAGGER_UI_VERSION) installed at $(SWAGGER_UI_DEST)"; \
-	fi
+# =====================
+# Swagger UI
+# =====================
 
+.PHONY: swagger-ui
 
-#===================
+swagger-ui: $(SWAGGER_STAMP)
+$(SWAGGER_STAMP): $(SWAGGER_UI_ZIP) $(CUSTOM_HTML)
+	@$(MKDIR) $(dir $@)
+	@echo "📦 Installing Swagger UI v$(SWAGGER_UI_VERSION)..."
+	@$(RM) "$(SWAGGER_UI_DEST)"
+	@$(MKDIR) "$(SWAGGER_UI_DEST)"
+	@$(UNZIP) -o "$(SWAGGER_UI_ZIP)" "swagger-ui-$(SWAGGER_UI_VERSION)/dist/*" -d "$(SWAGGER_UI_DEST)" >/dev/null
+	@cp "$(CUSTOM_HTML)" "$(SWAGGER_UI_DEST)/index.html"
+	@touch $@
+	@echo "✅ Swagger UI installed → $(SWAGGER_UI_DEST)"
+
+# =====================
 # Frontend & Backend
-#===================
+# =====================
 
-FRONTEND_SRC := $(shell find $(FRONTEND_DIR)/src -type f)
+.PHONY: frontend backend
 
-$(FRONTEND_DIST)/index.html: $(FRONTEND_SRC)
-	cd $(FRONTEND_DIR) && $(TRUNK) build --dist ../$(FRONTEND_DIST)
-
-frontend: $(FRONTEND_DIST)/index.html
-	@mkdir -p $(FRONTEND_DIST)
-	cd $(FRONTEND_DIR) && $(TRUNK) build --dist ../$(FRONTEND_DIST)
-	@if [ -f "$(FRONTEND_DIST)/index.html" ]; then \
-	    echo "Frontend built successfully at $(FRONTEND_DIST)"; \
-	else \
-	    echo "ERROR: Frontend build failed (index.html not found in $(FRONTEND_DIST))"; \
-	    exit 1; \
-	fi
+frontend: $(FRONTEND_STAMP)
+$(FRONTEND_STAMP): $(shell find $(FRONTEND_DIR)/src -type f) $(OPENAPI_SPEC)
+	@$(MKDIR) $(FRONTEND_DIST)
+	@echo "🚀 Building frontend..."
+	@cd $(FRONTEND_DIR) && $(TRUNK) build --dist ../$(FRONTEND_DIST)
+	@touch $@
+	@echo "✅ Frontend built → $(FRONTEND_DIST)"
 
 backend:
-	cd $(BACKEND_DIR) && $(CARGO) build
+	@echo "🚀 Building backend..."
+	@cd $(BACKEND_DIR) && $(CARGO) build
 
-#=======================
-# Combined Build Targets
-#=======================
+# =====================
+# Combined Targets
+# =====================
 
-build: generate-openapi-backend generate-openapi-frontend swagger-ui frontend backend
-	cargo build
+.PHONY: build run clean dev-frontend dev-backend
 
-run:
-	cd $(BACKEND_DIR)/infrastructure && $(CARGO) run
+build: openapi swagger-ui frontend backend
+	@echo "🎉 Build completed successfully!"
 
-#==============
-# Clean Targets
-#==============
+run: build
+	@echo "🏃 Running backend..."
+	@cd $(BACKEND_DIR)/infrastructure && $(CARGO) run
+
+# =====================
+# Cleanup
+# =====================
 
 clean:
-	rm -rf target
-	rm -rf backend/target
-	rm -rf backend/domain/target
-	rm -rf backend/application/target
-	rm -rf backend/infrastructure/target
-	rm -rf frontend/target
+	@echo "🧹 Cleaning build artifacts..."
+	@$(RM) target
+	@echo "✅ Clean complete!"
 
-#==============
+# =====================
 # Dev Utilities
-#==============
+# =====================
 
 dev-frontend:
-	cd $(FRONTEND_DIR) && $(TRUNK) serve --open --port 3000
+	@echo "🌐 Starting frontend dev server..."
+	@cd $(FRONTEND_DIR) && $(TRUNK) serve --open --port 3000
 
 dev-backend:
-	cd $(BACKEND_DIR) && $(CARGO) run
+	@echo "🧩 Running backend in dev mode..."
+	@cd $(BACKEND_DIR)/infrastructure && $(CARGO) run
