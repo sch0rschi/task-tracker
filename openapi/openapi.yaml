@@ -83,6 +83,34 @@ paths:
         '404':
           description: Task not found
 
+  /tasks/{id}/title:
+    put:
+      summary: Change the title of a task
+      operationId: renameTask
+      tags:
+        - tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameTask'
+      responses:
+        '200':
+          description: Task renamed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+
 components:
   schemas:
     Task:
@@ -98,6 +126,13 @@ components:
       required: [ id, title, done ]
 
     NewTask:
+      type: object
+      properties:
+        title:
+          type: string
+      required: [ title ]
+
+    RenameTask:
       type: object
       properties:
         title:
