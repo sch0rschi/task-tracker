@@ -17,14 +17,14 @@ pub struct TaskMapper {
 
 impl From<Task> for TaskPersistenceModel {
     fn from(task: Task) -> TaskPersistenceModel {
-        let task_mapper: TaskMapper  = task.into();
+        let task_mapper: TaskMapper = task.into();
         task_mapper.into()
     }
 }
 
 impl From<TaskPersistenceModel> for Task {
     fn from(task: TaskPersistenceModel) -> Task {
-        let task_mapper: TaskMapper  = task.into();
+        let task_mapper: TaskMapper = task.into();
         task_mapper.into()
     }
 }

@@ -32,6 +32,16 @@ impl TaskService {
         }
     }
 
+    pub async fn rename_task(&self, id: i64, new_title: String) -> anyhow::Result<Option<Task>> {
+        if let Some(mut task) = self.task_repository.find_by_id(id).await? {
+            task.title = new_title;
+            let updated = self.task_repository.save(task).await?;
+            Ok(Some(updated))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub async fn get_task(&self, id: i64) -> anyhow::Result<Option<Task>> {
         self.task_repository.find_by_id(id).await
     }
