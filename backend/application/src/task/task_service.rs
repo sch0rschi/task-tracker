@@ -1,14 +1,14 @@
-use crate::task::task_repository::TaskRepository;
+use crate::task::task_repository_trait::{TaskRepositoryTrait};
 use domain::task::Task;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct TaskService {
-    task_repository: Arc<dyn TaskRepository>,
+    task_repository: Arc<dyn TaskRepositoryTrait>,
 }
 
 impl TaskService {
-    pub fn new(repository: impl TaskRepository + 'static) -> Self {
+    pub fn new(repository: impl TaskRepositoryTrait + 'static) -> Self {
         Self {
             task_repository: Arc::new(repository),
         }

@@ -8,7 +8,7 @@ pub mod mapper;
 pub mod persistence;
 
 use application::task::task_service::TaskService;
-use persistence::repository::task_repository_impl::TaskRepositoryImpl;
+use persistence::repository::task_repository::TaskRepository;
 use api::task_controller::TaskController;
 
 #[actix_web::main]
@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to create schema");
 
-    let repo = TaskRepositoryImpl::new(db);
+    let repo = TaskRepository::new(db);
     let service = TaskService::new(repo);
     let controller = TaskController::new(service);
 

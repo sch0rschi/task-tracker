@@ -1,22 +1,22 @@
 use async_trait::async_trait;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, NotSet};
 use domain::task::Task;
-use application::task::task_repository::TaskRepository;
+use application::task::task_repository_trait::TaskRepositoryTrait;
 use crate::persistence::entity::task::{Entity as TaskEntity, Model as TaskModel};
 
 #[derive(Clone)]
-pub struct TaskRepositoryImpl {
+pub struct TaskRepository {
     db: DatabaseConnection,
 }
 
-impl TaskRepositoryImpl {
+impl TaskRepository {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl TaskRepository for TaskRepositoryImpl {
+impl TaskRepositoryTrait for TaskRepository {
     async fn save(&self, task: Task) -> anyhow::Result<Task> {
         let model: TaskModel = task.into();
         let mut active_model = model.clone().into_active_model();
