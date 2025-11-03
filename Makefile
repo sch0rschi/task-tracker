@@ -15,6 +15,7 @@ CD                := cd
 TOUCH             := touch
 CP                := cp
 MAKE              := make
+TRAP              := trap
 DOCKER_COMPOSE_UP := docker compose up -d
 
 # --- Versions & Locations ---
@@ -146,8 +147,12 @@ run: build
 
 dev-run:
 	@$(CD) $(LOCAL_SUPPORT_DIR) && $(DOCKER_COMPOSE_UP)
-	@$(MAKE) dev-frontend
-	@$(MAKE) dev-backend
+	@( \
+    		$(TRAP) 'echo "Stopping..."; kill 0' INT TERM; \
+    		$(MAKE) dev-backend & \
+    		$(MAKE) dev-frontend & \
+    		wait \
+    	)
 
 # =====================
 # Cleanup
