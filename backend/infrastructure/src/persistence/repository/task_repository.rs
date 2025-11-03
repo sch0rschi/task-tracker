@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, NotSet};
 use domain::task::Task;
@@ -6,12 +7,12 @@ use crate::persistence::entity::task::{Entity as TaskEntity, Model as TaskModel}
 
 #[derive(Clone)]
 pub struct TaskRepository {
-    db: DatabaseConnection,
+    database_connection: Arc<DatabaseConnection>,
 }
 
 impl TaskRepository {
-    pub fn new(db: DatabaseConnection) -> Self {
-        Self { db }
+    pub fn new(database_connection: Arc<DatabaseConnection>) -> Self {
+        Self { database_connection }
     }
 }
 
@@ -22,15 +23,15 @@ impl TaskRepositoryTrait for TaskRepository {
         let mut active_model = model.clone().into_active_model();
         if model.id == 0 {
             active_model.id = NotSet;
-            Ok(active_model.insert(&self.db).await?.into())
+            Ok(active_model.insert(&*self.database_connection).await?.into())
         } else {
             let active_model = active_model.reset_all();
-            Ok(active_model.update(&self.db).await?.into())
+            Ok(active_model.update(&*self.database_connection).await?.into())
         }
     }
 
     async fn find_all(&self) -> anyhow::Result<Vec<Task>> {
-        Ok(TaskEntity::find().all(&self.db).await?
+        Ok(TaskEntity::find().all(&*self.database_connection).await?
             .into_iter()
             .map(Into::into)
             .collect())
@@ -38,7 +39,7 @@ impl TaskRepositoryTrait for TaskRepository {
 
     async fn find_by_id(&self, id: i64) -> anyhow::Result<Option<Task>> {
         Ok(TaskEntity::find_by_id(id)
-            .one(&self.db)
+            .one(&*self.database_connection)
             .await?
             .map(Into::into))
     }

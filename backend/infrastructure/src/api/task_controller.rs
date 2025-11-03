@@ -1,21 +1,22 @@
-use application::task::task_service::TaskService;
-use actix_web::{HttpResponse, Responder, Scope, web};
-use openapi_client::models::{NewTask, RenameTask, Task as TaskApiModel};
 use crate::mapper::task_mapper::ToApiModel;
+use actix_web::{HttpResponse, Responder, Scope, web};
+use application::task::task_service_trait::TaskServiceTrait;
+use openapi_client::models::{NewTask, RenameTask, Task as TaskApiModel};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct TaskController {
-    service: TaskService,
+    task_service: Arc<dyn TaskServiceTrait>,
 }
 
 impl TaskController {
-    pub fn new(service: TaskService) -> Self {
-        Self { service }
+    pub fn new(task_service: Arc<dyn TaskServiceTrait>) -> Self {
+        Self { task_service }
     }
 
-    pub fn scope(self) -> Scope {
+    pub fn configure(&self) -> Scope {
         web::scope("/tasks")
-            .app_data(web::Data::new(self.service))
+            .app_data(web::Data::new(self.task_service.clone()))
             .route("", web::get().to(Self::list_tasks))
             .route("", web::post().to(Self::create_task))
             .route("/{id}", web::get().to(Self::get_task))
@@ -23,13 +24,11 @@ impl TaskController {
             .route("/{id}/title", web::put().to(Self::rename_task))
     }
 
-    async fn list_tasks(service: web::Data<TaskService>) -> impl Responder {
+    async fn list_tasks(service: web::Data<Arc<dyn TaskServiceTrait>>) -> impl Responder {
         match service.list_tasks().await {
             Ok(tasks) => {
-                let api_tasks: Vec<TaskApiModel> = tasks
-                    .into_iter()
-                    .map(ToApiModel::to_api_model)
-                    .collect();
+                let api_tasks: Vec<TaskApiModel> =
+                    tasks.into_iter().map(ToApiModel::to_api_model).collect();
                 HttpResponse::Ok().json(api_tasks)
             }
             Err(e) => {
@@ -40,7 +39,7 @@ impl TaskController {
     }
 
     async fn create_task(
-        service: web::Data<TaskService>,
+        service: web::Data<Arc<dyn TaskServiceTrait>>,
         payload: web::Json<NewTask>,
     ) -> impl Responder {
         match service.create_task(&payload.title).await {
@@ -52,7 +51,10 @@ impl TaskController {
         }
     }
 
-    async fn get_task(path: web::Path<i64>, service: web::Data<TaskService>) -> impl Responder {
+    async fn get_task(
+        path: web::Path<i64>,
+        service: web::Data<Arc<dyn TaskServiceTrait>>,
+    ) -> impl Responder {
         let id = path.into_inner();
         match service.get_task(id).await {
             Ok(Some(task)) => HttpResponse::Ok().json(ToApiModel::to_api_model(task)),
@@ -64,7 +66,10 @@ impl TaskController {
         }
     }
 
-    async fn mark_done(path: web::Path<i64>, service: web::Data<TaskService>) -> impl Responder {
+    async fn mark_done(
+        path: web::Path<i64>,
+        service: web::Data<Arc<dyn TaskServiceTrait>>,
+    ) -> impl Responder {
         let id = path.into_inner();
         match service.mark_done(id).await {
             Ok(Some(task)) => HttpResponse::Ok().json(ToApiModel::to_api_model(task)),
@@ -79,7 +84,7 @@ impl TaskController {
     pub async fn rename_task(
         path: web::Path<i64>,
         new_title: web::Json<RenameTask>,
-        service: web::Data<TaskService>,
+        service: web::Data<Arc<dyn TaskServiceTrait>>,
     ) -> impl Responder {
         let id = path.into_inner();
         let new_title = new_title.into_inner().title;
