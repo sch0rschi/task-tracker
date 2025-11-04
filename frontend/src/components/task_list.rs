@@ -4,6 +4,7 @@ use api_client::apis::tasks_api;
 use api_client::models::{Task, NewTask};
 use crate::api_config::config;
 use crate::components::task_item::TaskItem;
+use crate::components::utils::bind_input;
 
 #[function_component(TaskList)]
 pub fn task_list() -> Html {
@@ -25,15 +26,7 @@ pub fn task_list() -> Html {
         });
     }
 
-    // Input handler
-    let oninput = {
-        let title = title.clone();
-        Callback::from(move |e: InputEvent| {
-            if let Some(input) = e.target_dyn_into::<web_sys::HtmlInputElement>() {
-                title.set(input.value());
-            }
-        })
-    };
+    let oninput_title = bind_input(title.clone());
 
     // Add new task
     let onclick_add = {
@@ -77,7 +70,7 @@ pub fn task_list() -> Html {
                     class="border border-gray-300 rounded px-3 py-2 flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="New task title"
                     value={(*title).clone()}
-                    oninput={oninput}
+                    oninput={oninput_title}
                 />
                 <button
                     class="ml-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
