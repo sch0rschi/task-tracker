@@ -4,15 +4,22 @@ info:
   version: 0.1.0
 
 paths:
-  /tasks:
-    get:
-      summary: Get all tasks
-      operationId: listTasks
+  /tasks/filter:
+    post:
+      summary: Filter and sort tasks
+      description: Filter tasks using flexible criteria and sort by various fields.
+      operationId: filterTasks
       tags:
         - tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskFilterAndSort'
       responses:
         '200':
-          description: List of all tasks
+          description: List of filtered and sorted tasks
           content:
             application/json:
               schema:
@@ -20,6 +27,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Task'
 
+  /tasks:
     post:
       summary: Create a new task
       operationId: createTask
@@ -126,7 +134,13 @@ components:
           type: string
         done:
           type: boolean
-      required: [ id, title, done ]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [ id, title, done, createdAt, updatedAt ]
 
     NewTask:
       type: object
@@ -141,3 +155,51 @@ components:
         title:
           type: string
       required: [ title ]
+
+    TaskFilterAndSort:
+      type: object
+      properties:
+        filters:
+          type: object
+          properties:
+            done:
+              type: boolean
+              description: Filter tasks by completion status.
+            title:
+              type: string
+              description: Filter tasks by partial title match.
+            createdAfter:
+              type: string
+              format: date-time
+              description: Return tasks created after this date.
+            createdBefore:
+              type: string
+              format: date-time
+              description: Return tasks created before this date.
+            updatedAfter:
+              type: string
+              format: date-time
+              description: Return tasks updated after this date.
+            updatedBefore:
+              type: string
+              format: date-time
+              description: Return tasks updated before this date.
+        sort:
+          type: object
+          properties:
+            field:
+              type: string
+              enum: [createdAt, updatedAt, title, done]
+              description: Field to sort by.
+            direction:
+              type: string
+              enum: [asc, desc]
+              description: Sort direction (ascending or descending).
+      example:
+        filters:
+          done: false
+          title: "report"
+          createdAfter: "2025-01-01T00:00:00Z"
+        sort:
+          field: updatedAt
+          direction: desc

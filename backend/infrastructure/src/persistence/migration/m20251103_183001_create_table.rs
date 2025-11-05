@@ -20,6 +20,8 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Tasks::Title).string().not_null())
                     .col(ColumnDef::new(Tasks::Done).boolean().not_null())
+                    .col(ColumnDef::new(Tasks::CreatedAt).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
+                    .col(ColumnDef::new(Tasks::UpdatedAt).timestamp_with_time_zone().not_null().default(Expr::current_timestamp()))
                     .to_owned(),
             )
             .await
@@ -38,4 +40,6 @@ enum Tasks {
     Id,
     Title,
     Done,
+    CreatedAt,
+    UpdatedAt,
 }

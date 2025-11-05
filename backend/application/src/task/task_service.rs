@@ -3,6 +3,7 @@ use crate::task::task_service_trait::TaskServiceTrait;
 use async_trait::async_trait;
 use domain::task::Task;
 use std::sync::Arc;
+use crate::task::task_filter_and_sort_dto::TaskFilterAndSortDto;
 
 #[derive(Clone)]
 pub struct TaskService {
@@ -49,7 +50,7 @@ impl TaskServiceTrait for TaskService {
         self.task_repository.find_by_id(id).await
     }
 
-    async fn list_tasks(&self) -> anyhow::Result<Vec<Task>> {
-        self.task_repository.find_all().await
+    async fn find_tasks(&self, filter_and_sort: TaskFilterAndSortDto) -> anyhow::Result<Vec<Task>> {
+        self.task_repository.find_tasks(filter_and_sort).await
     }
 }

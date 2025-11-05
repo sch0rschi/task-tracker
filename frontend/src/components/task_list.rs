@@ -1,10 +1,11 @@
-use yew::prelude::*;
-use wasm_bindgen_futures::spawn_local;
-use api_client::apis::tasks_api;
-use api_client::models::{Task, NewTask};
 use crate::api_config::config;
 use crate::components::task_item::TaskItem;
 use crate::components::utils::bind_input;
+use api_client::apis::tasks_api;
+use api_client::models;
+use api_client::models::{NewTask, Task};
+use wasm_bindgen_futures::spawn_local;
+use yew::prelude::*;
 
 #[function_component(TaskList)]
 pub fn task_list() -> Html {
@@ -18,7 +19,8 @@ pub fn task_list() -> Html {
             let tasks = tasks.clone();
             spawn_local(async move {
                 let config = config();
-                if let Ok(fetched) = tasks_api::list_tasks(&config).await {
+                let task_filter_and_sort = models::TaskFilterAndSort::default();
+                if let Ok(fetched) = tasks_api::filter_tasks(&config, task_filter_and_sort).await {
                     tasks.set(fetched);
                 }
             });
@@ -55,7 +57,13 @@ pub fn task_list() -> Html {
         Callback::from(move |updated: Task| {
             let new_tasks = (*tasks)
                 .iter()
-                .map(|t| if t.id == updated.id { updated.clone() } else { t.clone() })
+                .map(|t| {
+                    if t.id == updated.id {
+                        updated.clone()
+                    } else {
+                        t.clone()
+                    }
+                })
                 .collect();
             tasks.set(new_tasks);
         })

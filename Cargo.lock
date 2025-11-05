@@ -370,6 +370,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chrono",
  "domain",
 ]
 
@@ -913,6 +914,9 @@ dependencies = [
 [[package]]
 name = "domain"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+]
 
 [[package]]
 name = "dotenvy"
@@ -2130,11 +2134,13 @@ dependencies = [
  "anyhow",
  "application",
  "async-trait",
+ "chrono",
  "domain",
  "o2o",
  "openapi_client",
  "sea-orm",
  "sea-orm-migration",
+ "serde",
 ]
 
 [[package]]

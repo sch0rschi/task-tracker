@@ -1,4 +1,5 @@
 use o2o::o2o;
+use chrono::{DateTime, Utc};
 use domain::task::Task;
 use crate::persistence::entity::task::Model as TaskPersistenceModel;
 use openapi_client::models::Task as TaskApiModel;
@@ -13,6 +14,8 @@ pub struct TaskMapper {
     pub id: i64,
     pub title: String,
     pub done: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 impl From<Task> for TaskPersistenceModel {

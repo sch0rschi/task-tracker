@@ -7,5 +7,9 @@ edition = "2021"
 api_client = { path = "../target/generated/frontend/openapi" }
 yew = { version = "0.21", features = ["csr"] }
 wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3", features = ["HtmlInputElement"] }
+web-sys = { version = "0.3", features = [
+    "HtmlSelectElement",
+    "HtmlInputElement",
+    "EventTarget",
+] }
 reqwest = { version = "0.12.24", default-features = false, features = ["json"] }

@@ -1,7 +1,8 @@
+use crate::mapper::task_filter_and_sort_mapper::ToTaskFilterAndSortDto;
 use crate::mapper::task_mapper::ToApiModel;
-use actix_web::{HttpResponse, Responder, Scope, web};
+use actix_web::{web, HttpResponse, Responder, Scope};
 use application::task::task_service_trait::TaskServiceTrait;
-use openapi_client::models::{NewTask, RenameTask, Task as TaskApiModel};
+use openapi_client::models::{NewTask, RenameTask, Task as TaskApiModel, TaskFilterAndSort};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -17,15 +18,16 @@ impl TaskController {
     pub fn configure(&self) -> Scope {
         web::scope("/tasks")
             .app_data(web::Data::new(self.task_service.clone()))
-            .route("", web::get().to(Self::list_tasks))
+            .route("/filter", web::post().to(Self::filter_tasks))
             .route("", web::post().to(Self::create_task))
             .route("/{id}", web::get().to(Self::get_task))
             .route("/{id}/done", web::put().to(Self::mark_done))
             .route("/{id}/title", web::put().to(Self::rename_task))
     }
 
-    async fn list_tasks(service: web::Data<Arc<dyn TaskServiceTrait>>) -> impl Responder {
-        match service.list_tasks().await {
+    async fn filter_tasks(service: web::Data<Arc<dyn TaskServiceTrait>>,
+                          payload: web::Json<TaskFilterAndSort>) -> impl Responder {
+        match service.find_tasks(ToTaskFilterAndSortDto::to_dto(payload.into_inner())).await {
             Ok(tasks) => {
                 let api_tasks: Vec<TaskApiModel> =
                     tasks.into_iter().map(ToApiModel::to_api_model).collect();
