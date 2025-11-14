@@ -17,6 +17,12 @@ CP                := cp
 MAKE              := make
 TRAP              := trap
 DOCKER_COMPOSE_UP := docker compose up -d
+UNAME_S           := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    BACKEND_DEV_CMD := watchexec --restart --watch ../ --exts rs -- cargo run
+else
+    BACKEND_DEV_CMD := cargo watch -w ../ -x run
+endif
 
 # --- Versions & Locations ---
 GENERATOR_VERSION     := 7.16.0
@@ -172,5 +178,6 @@ dev-frontend:
 	@$(CD) $(FRONTEND_DIR) && $(TRUNK) serve --open --port 3000
 
 dev-backend:
-	@$(ECHO) "🧩 Running backend in dev mode..."
-	@$(CD) $(BACKEND_DIR)/infrastructure && $(CARGO) run
+	@$(ECHO) "🧩 Running backend in dev mode with auto-reload..."
+	@$(CD) $(BACKEND_DIR)/infrastructure && $(BACKEND_DEV_CMD)
+

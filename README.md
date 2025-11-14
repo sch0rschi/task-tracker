@@ -10,6 +10,10 @@ This is a simple TODO list project with a structured build system.
 -   Swagger UI integration.
 -   Docker-based local development environment.
 
+## Dependencies
+-   Cargo
+-   cargo watch (Linux, Windows) / watchexec (macOS)
+
 ## Build Instructions
 
 To build the entire project:
